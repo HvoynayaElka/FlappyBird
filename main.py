@@ -90,6 +90,7 @@ def generate_level(level): # генерация уровня из файла
                 Tile('tree', x, y)
             elif level[y][x] == '-':
                 Tile('land', x, y)
+
     return new_player, x, y
 
 
