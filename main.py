@@ -84,8 +84,6 @@ def generate_level(level): # генерация уровня из файла
                 Tile('wall', x, y)
             elif level[y][x] == '@':
                 new_player = Player(x, y)
-            elif level[y][x] == '*':
-                Tile('ground', x, y)
             elif level[y][x] == '!':
                 Tile('tree', x, y)
             elif level[y][x] == '-':
@@ -100,15 +98,25 @@ class Camera:
 
     def apply(self, obj):
         obj.rect.x += self.dx
-        if obj.rect.x <= -TILE_WIDHT:
+        if obj in ground_sprites and obj.rect.x <= -WIDTH:
+            obj.rect.x += WIDTH * 2
+        elif obj in obstacles_sprites and obj.rect.x <= -TILE_WIDHT:
             obj.rect.x += level_x * TILE_WIDHT
 
     def update(self, target):
         self.dx = -(target.rect.x + target.rect.w // 2 - WIDTH // 2)
 
 
+class Ground(pygame.sprite.Sprite):
+    def __init__(self, k):
+        super().__init__(all_sprites, ground_sprites)
+        self.image = ground_image
+        self.rect = self.image.get_rect().move(WIDTH * k, HEIGHT - TILE_HEIGHT * KOEF)
+
+
 pygame.init()
 WIDTH, HEIGHT = 1920, 1080
+KOEF = 1.3
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 
 player = None
@@ -118,6 +126,7 @@ camera = Camera()
 obstacles_sprites = pygame.sprite.Group()
 environment_sprites = pygame.sprite.Group()
 player_sprite = pygame.sprite.Group()
+ground_sprites = pygame.sprite.Group()
 all_sprites = pygame.sprite.Group()
 
 
@@ -125,22 +134,26 @@ TILE_WIDHT = TILE_HEIGHT = 100 #размер одной клетки
 
 tile_images = { #картинки спрайтов
     'wall': pygame.transform.scale(load_image('box.png'), (TILE_WIDHT, TILE_HEIGHT)),
-    'ground': pygame.transform.scale(load_image('ground.png', -1), (TILE_WIDHT, TILE_HEIGHT)),
     'tree': pygame.transform.scale(load_image('tree.png'), (TILE_WIDHT, TILE_HEIGHT)),
     'land': pygame.transform.scale(load_image('land.png'), (TILE_WIDHT, TILE_HEIGHT))
 }
-player_image = load_image('mar.png') #картинка игрока
-player_image = pygame.transform.scale(player_image, (TILE_WIDHT * 2, TILE_HEIGHT))
+#картинка игрока
+player_image = pygame.transform.scale(load_image('mar.png'), (TILE_WIDHT * 2, TILE_HEIGHT))
+ground_image = pygame.transform.scale(load_image('test_gr2.png'), (WIDTH, TILE_HEIGHT * KOEF))
+background_image = pygame.transform.scale(load_image('background2.png'), (WIDTH, HEIGHT))
 
 start_screen()
 timer = pygame.USEREVENT + 1 #таймер
 pygame.time.set_timer(timer, 10)
+T = 0
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
             terminate()
         if (event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN) and not player:
             player, level_x, level_y = generate_level(load_level())
+            Ground(0)
+            Ground(1)
         if event.type == pygame.KEYDOWN and event.key == pygame.K_UP:
             player.rect = player.rect.move(0, -50)
         if event.type == pygame.KEYDOWN and event.key == pygame.K_DOWN:
@@ -148,11 +161,16 @@ while True:
         if event.type == timer and player:
             player.rect = player.rect.move(5, 0)
     if player:
-        screen.fill((168, 216, 255))
+        screen.fill((0, 0, 0))
+        screen.blit(background_image, (T, 0))
+        screen.blit(background_image, (T + WIDTH, 0))
+        if T < -WIDTH:
+            T = 0
+        T -= 1
         camera.update(player)
         for sprite in all_sprites:
             if pygame.sprite.collide_mask(player, sprite) and sprite in obstacles_sprites:
-                terminate()
+                pass
             camera.apply(sprite)
     all_sprites.draw(screen)
     player_sprite.draw(screen)
