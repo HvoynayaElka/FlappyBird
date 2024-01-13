@@ -1,6 +1,6 @@
 import pygame
 import sys
-import os
+from Funcs import load_image, load_level
 
 
 def terminate():
@@ -8,49 +8,23 @@ def terminate():
     sys.exit()
 
 
-def start_screen(): #пока что такой же как в уроке, потом нуэно будет менять
-    intro_text = ["ЗАСТАВКА", "",
-                  "Правила игры",
-                  "Если в правилах несколько строк,",
-                  "приходится выводить их построчно"]
+class Start_screen:
+    def __init__(self):
+        screen.blit(fon, (0, 0))
+        main_font = pygame.font.Font(None, 150)
+        string_rendered = main_font.render('Flappy bird', 1, (168, 168, 168))
+        screen.blit(string_rendered, (300, 150))
+        texts = ['Играть', 'Выйти']
+        text_coord = 300
+        delta_coord = 100
+        Button(300, text_coord + delta_coord, 300, 50, texts[0], self.start_game)
+        Button(300, text_coord + delta_coord * 2, 300, 50, texts[1], terminate)
 
-    fon = pygame.transform.scale(load_image('fon.jpg'), (WIDTH, HEIGHT))
-    screen.blit(fon, (0, 0))
-    font = pygame.font.Font(None, 30)
-    text_coord = 50
-    for line in intro_text:
-        string_rendered = font.render(line, 1, pygame.Color('black'))
-        intro_rect = string_rendered.get_rect()
-        text_coord += 10
-        intro_rect.top = text_coord
-        intro_rect.x = 10
-        text_coord += intro_rect.height
-        screen.blit(string_rendered, intro_rect)
-
-
-def load_image(name, colorkey=None):
-    fullname = os.path.join('data', name)
-    if not os.path.isfile(fullname):
-        print(f"Файл с изображением '{fullname}' не найден")
-        sys.exit()
-    image = pygame.image.load(fullname)
-    if colorkey is not None:
-        image = image.convert()
-        if colorkey == -1:
-            colorkey = image.get_at((0, 0))
-        image.set_colorkey(colorkey)
-    return image
-
-
-def load_level(filename=None):
-    filename = 'map.txt'
-    filename = "data/" + filename
-    with open(filename, 'r') as mapFile:
-        level_map = [line.strip() for line in mapFile]
-
-    max_width = max(map(len, level_map))
-
-    return list(map(lambda x: x.ljust(max_width, '.'), level_map))
+    def start_game(self):
+        global player, level_x, level_y
+        player, level_x, level_y = generate_level(load_level())
+        Ground(0)
+        Ground(1)
 
 
 class Tile(pygame.sprite.Sprite): #создаёт все спрайты, кроме игрока
@@ -114,15 +88,41 @@ class Ground(pygame.sprite.Sprite):
         self.rect = self.image.get_rect().move(WIDTH * k, HEIGHT - TILE_HEIGHT * KOEF)
 
 
+class Button:
+    def __init__(self, x, y, width, height, button_text='Button', onclickFunction=None):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.onclickFunction = onclickFunction
+        self.button_text = button_text
+        self.fillColors = {'normal': (20, 20, 20), 'hover': (255, 128, 128)}
+        buttons_list.append(self)
+        self.buttonRect = pygame.Rect(self.x, self.y, self.width, self.height)
+        self.main_font = pygame.font.Font(None, 50)
+        self.display_text = self.main_font.render(button_text, True, (20, 20, 20))
+
+    def process(self):
+        mouse_pos = pygame.mouse.get_pos()
+        self.display_text = self.main_font.render(self.button_text, True, self.fillColors["normal"])
+        if self.buttonRect.collidepoint(mouse_pos):
+            self.display_text = self.main_font.render(self.button_text, True, self.fillColors["hover"])
+            if pygame.mouse.get_pressed()[0]:
+                self.onclickFunction()
+        screen.blit(self.display_text, self.buttonRect)
+
+
 pygame.init()
 WIDTH, HEIGHT = 1920, 1080
 KOEF = 1.3
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 
 player = None
+level_x = None
+level_y = None
 camera = Camera()
 
-
+buttons_list = []
 obstacles_sprites = pygame.sprite.Group()
 environment_sprites = pygame.sprite.Group()
 player_sprite = pygame.sprite.Group()
@@ -139,10 +139,11 @@ tile_images = { #картинки спрайтов
 }
 #картинка игрока
 player_image = pygame.transform.scale(load_image('mar.png'), (TILE_WIDHT * 2, TILE_HEIGHT))
-ground_image = pygame.transform.scale(load_image('test_gr2.png'), (WIDTH, TILE_HEIGHT * KOEF))
-background_image = pygame.transform.scale(load_image('background2.png'), (WIDTH, HEIGHT))
+ground_image = pygame.transform.scale(load_image('ground.png'), (WIDTH, TILE_HEIGHT * KOEF))
+background_image = pygame.transform.scale(load_image('background.png'), (WIDTH, HEIGHT))
+fon = pygame.transform.scale(load_image('fon.jpg'), (WIDTH, HEIGHT))
 
-start_screen()
+Start_screen()
 timer = pygame.USEREVENT + 1 #таймер
 pygame.time.set_timer(timer, 10)
 T = 0
@@ -150,14 +151,10 @@ while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
             terminate()
-        if (event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN) and not player:
-            player, level_x, level_y = generate_level(load_level())
-            Ground(0)
-            Ground(1)
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_UP:
-            player.rect = player.rect.move(0, -50)
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_DOWN:
-            player.rect = player.rect.move(0, 50)
+#        if event.type == pygame.KEYDOWN and event.key == pygame.K_UP:
+#            player.rect = player.rect.move(0, -50)
+#        if event.type == pygame.KEYDOWN and event.key == pygame.K_DOWN:
+#            player.rect = player.rect.move(0, 50)
         if event.type == timer and player:
             player.rect = player.rect.move(5, 0)
     if player:
@@ -172,6 +169,9 @@ while True:
             if pygame.sprite.collide_mask(player, sprite) and sprite in obstacles_sprites:
                 pass
             camera.apply(sprite)
+    else:
+        for btn in buttons_list:
+            btn.process()
     all_sprites.draw(screen)
     player_sprite.draw(screen)
     pygame.display.flip()
