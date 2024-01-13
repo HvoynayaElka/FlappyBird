@@ -139,8 +139,8 @@ tile_images = { #картинки спрайтов
 }
 #картинка игрока
 player_image = pygame.transform.scale(load_image('mar.png'), (TILE_WIDHT * 2, TILE_HEIGHT))
-ground_image = pygame.transform.scale(load_image('test_gr2.png'), (WIDTH, TILE_HEIGHT * KOEF))
-background_image = pygame.transform.scale(load_image('background2.png'), (WIDTH, HEIGHT))
+ground_image = pygame.transform.scale(load_image('ground.png'), (WIDTH, TILE_HEIGHT * KOEF))
+background_image = pygame.transform.scale(load_image('background.png'), (WIDTH, HEIGHT))
 
 start_screen()
 timer = pygame.USEREVENT + 1 #таймер
