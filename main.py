@@ -7,13 +7,13 @@ class Start_screen:
     def __init__(self):
         screen.blit(fon, (0, 0))
         main_font = pygame.font.Font(None, 150)
-        string_rendered = main_font.render('Flappy bird', 1, (168, 168, 168))
-        screen.blit(string_rendered, (300, 150))
+        string_rendered = main_font.render('Flappy bird', 1, "#dd9475")
+        screen.blit(string_rendered, (WIDTH / 5, HEIGHT / 6))
         texts = ['Играть', 'Выйти']
-        text_coord = 300
         delta_coord = 100
-        Button(300, text_coord + delta_coord, 300, 50, menu_buttons, texts[0], start_game)
-        Button(300, text_coord + delta_coord * 2, 300, 50, menu_buttons, texts[1], terminate)
+        koef_coord = 0.5
+        Button(WIDTH / 20, HEIGHT * koef_coord, 300, 50, menu_buttons, texts[0], start_game)
+        Button(WIDTH / 20, HEIGHT * koef_coord + delta_coord, 300, 50, menu_buttons, texts[1], terminate)
 
 
 class Lose_screen:
@@ -23,14 +23,16 @@ class Lose_screen:
         self.func = None
         self.check = True
         self.Surf = pygame.Surface((self.width, self.height))
+        main_font = pygame.font.Font(None, 150)
+        self.string_rendered = main_font.render('You lose', 1, "red")
         self.delta = 5
         self.rect = pygame.Rect((WIDTH - self.width) / 2 - self.delta, (HEIGHT - self.height) / 2 - self.delta,
                                 self.width + self.delta * 2, self.height + self.delta * 2)
         self.button_list = []
-        self.Retry_btn = Button((WIDTH - LOSESCREEN_WIDHT) / KOEF, (HEIGHT - LOSESCREEN_HEIGHT) / KOEF,
-                                LOSESCREEN_WIDHT / 2, LOSESCREEN_HEIGHT / 2, self.button_list,
+        self.Retry_btn = Button(LOSESCREEN_WIDHT * 1.1, LOSESCREEN_HEIGHT,
+                                LOSESCREEN_WIDHT, LOSESCREEN_HEIGHT, self.button_list,
                                 onclickFunction=self.restart_game, image=retry_btn_image)
-        self.Quit_btn = Button((WIDTH - LOSESCREEN_WIDHT) / KOEF ** 2.5, (HEIGHT - LOSESCREEN_HEIGHT) / KOEF,
+        self.Quit_btn = Button((WIDTH - LOSESCREEN_WIDHT) / 1.5, LOSESCREEN_HEIGHT,
                                 LOSESCREEN_WIDHT / 2, LOSESCREEN_HEIGHT / 2, self.button_list,
                                 onclickFunction=terminate, image=quit_btn_image)
         self.update()
@@ -48,7 +50,7 @@ class Lose_screen:
         start_game()
 
     def update(self):
-        self.Surf.fill((20, 20, 20))
+        self.Surf.blit(self.string_rendered, ((self.Surf.get_width() - self.string_rendered.get_width()) / 2, (self.Surf.get_height() - self.string_rendered.get_height()) / 4))
         while self.check:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
@@ -168,7 +170,7 @@ def terminate():
 
 
 pygame.init()
-WIDTH, HEIGHT = 1920, 1080
+WIDTH, HEIGHT = 960, 540
 KOEF = 1.3
 LOSESCREEN_WIDHT, LOSESCREEN_HEIGHT = 500, 300
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -187,7 +189,7 @@ ground_sprites = pygame.sprite.Group()
 all_sprites = pygame.sprite.Group()
 
 
-TILE_WIDHT = TILE_HEIGHT = 100 #размер одной клетки
+TILE_WIDHT = TILE_HEIGHT = 50 #размер одной клетки
 
 tile_images = { #картинки спрайтов
     'wall': pygame.transform.scale(load_image('box.png'), (TILE_WIDHT, TILE_HEIGHT)),
@@ -205,19 +207,19 @@ quit_btn_image = pygame.transform.scale(load_image('quit.png'), (75, 75))
 
 Start_screen()
 timer = pygame.USEREVENT + 1 #таймер
-pygame.time.set_timer(timer, 10)
+pygame.time.set_timer(timer, 3)
 T = 0
 pygame.key.set_repeat(10, 10)
 while True:
     for event in pygame.event.get():
+        if event.type == timer and player:
+            player.rect = player.rect.move(1, 0)
         if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
             terminate()
         if player and event.type == pygame.KEYDOWN and event.key == pygame.K_UP:
            player.rect = player.rect.move(0, -10)
         if player and event.type == pygame.KEYDOWN and event.key == pygame.K_DOWN:
            player.rect = player.rect.move(0, 10)
-        if event.type == timer and player:
-            player.rect = player.rect.move(5, 0)
     if player:
         screen.fill((0, 0, 0))
         screen.blit(background_image, (T, 0))
