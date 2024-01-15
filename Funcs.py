@@ -25,3 +25,7 @@ def load_level(filename=None):
     max_width = max(map(len, level_map))
 
     return list(map(lambda x: x.ljust(max_width, '.'), level_map))
+
+
+def levels_count():
+    return os.listdir('data\\levels\\other levels')
