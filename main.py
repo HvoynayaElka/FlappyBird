@@ -20,26 +20,25 @@ class Lose_screen:
     def __init__(self, width, height):
         self.width = width
         self.height = height
+        self.x0 = (WIDTH - self.width) / 2
+        self.y0 = (HEIGHT - self.height) / 2
         self.func = None
         self.check = True
         self.Surf = pygame.Surface((self.width, self.height))
-        main_font = pygame.font.Font(None, 150)
+        main_font = pygame.font.Font(None, 75)
         self.string_rendered = main_font.render('You lose', 1, "red")
-        self.delta = 5
-        self.rect = pygame.Rect((WIDTH - self.width) / 2 - self.delta, (HEIGHT - self.height) / 2 - self.delta,
-                                self.width + self.delta * 2, self.height + self.delta * 2)
         self.button_list = []
-        self.Retry_btn = Button(LOSESCREEN_WIDHT * 1.1, LOSESCREEN_HEIGHT,
-                                LOSESCREEN_WIDHT, LOSESCREEN_HEIGHT, self.button_list,
+        self.Retry_btn = Button((WIDTH - self.width) * 1.2, (HEIGHT - self.height) * 1.1, retry_btn_image.get_width(),
+                                retry_btn_image.get_height(), self.button_list,
                                 onclickFunction=self.restart_game, image=retry_btn_image)
-        self.Quit_btn = Button((WIDTH - LOSESCREEN_WIDHT) / 1.5, LOSESCREEN_HEIGHT,
-                                LOSESCREEN_WIDHT / 2, LOSESCREEN_HEIGHT / 2, self.button_list,
+        self.Quit_btn = Button((WIDTH - self.width) * 0.6, (HEIGHT - self.height) * 1.1,
+                                quit_btn_image.get_width(), quit_btn_image.get_width(), self.button_list,
                                 onclickFunction=terminate, image=quit_btn_image)
         self.update()
 
     def restart_game(self):
         global player, level_x, level_y, is_alive, obstacles_sprites,\
-            environment_sprites, player_sprite, ground_sprites, all_sprites
+            environment_sprites, player_sprite, ground_sprites, all_sprites, player_cur_score, current_score_text
         obstacles_sprites = pygame.sprite.Group()
         environment_sprites = pygame.sprite.Group()
         player_sprite = pygame.sprite.Group()
@@ -47,15 +46,18 @@ class Lose_screen:
         all_sprites = pygame.sprite.Group()
         player, level_x, level_y, is_alive = None, None, None, True
         self.check = False
+        player_cur_score = 0
+        current_score_text = score_font.render(f'Score: {player_cur_score}', 1, "black")
         start_game()
 
     def update(self):
-        self.Surf.blit(self.string_rendered, ((self.Surf.get_width() - self.string_rendered.get_width()) / 2, (self.Surf.get_height() - self.string_rendered.get_height()) / 4))
+        self.Surf.blit(self.string_rendered,
+                       ((self.Surf.get_width() - self.string_rendered.get_width()) / 2,
+                        (self.Surf.get_height() - self.string_rendered.get_height()) / 4))
         while self.check:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
                     terminate()
-            pygame.draw.rect(screen, (120, 120, 120), self.rect)
             screen.blit(self.Surf, ((WIDTH - self.width) / 2, (HEIGHT - self.height) / 2))
             for btn in self.button_list:
                 btn.process()
@@ -99,10 +101,13 @@ class Camera:
 
 
 class Ground(pygame.sprite.Sprite):
-    def __init__(self, k):
+    def __init__(self, k=0, upper=False):
         super().__init__(all_sprites, ground_sprites)
         self.image = ground_image
-        self.rect = self.image.get_rect().move(WIDTH * k, HEIGHT - TILE_HEIGHT * KOEF)
+        if not upper:
+            self.rect = self.image.get_rect().move(WIDTH * k, HEIGHT - TILE_HEIGHT * KOEF)
+        else:
+            self.rect = self.image.get_rect().move(WIDTH * k, -TILE_HEIGHT * KOEF)
 
 
 class Button:
@@ -139,20 +144,19 @@ class Button:
 
 
 def start_game():
-    global player, level_x, level_y, menu_buttons
+    global player, level_x, level_y, menu_buttons, score_text
     menu_buttons = []
-    player, level_x, level_y = generate_level(load_level())
+    player, level_x, level_y = generate_level(load_level('levels\\main_map.txt'))
     Ground(0)
     Ground(1)
+    Ground(upper=True)
 
 
 def generate_level(level): # генерация уровня из файла
     new_player, x, y = None, None, None
     for y in range(len(level)):
         for x in range(len(level[y])):
-            if level[y][x] == '.':
-                pass
-            elif level[y][x] == '#':
+            if level[y][x] == '#':
                 Tile('wall', x, y)
             elif level[y][x] == '@':
                 new_player = Player(x, y)
@@ -166,16 +170,25 @@ def generate_level(level): # генерация уровня из файла
 
 def terminate():
     pygame.quit()
+    with open('data\\player result\\info.txt', 'w') as file:
+        file.write(str(player_high_score))
     sys.exit()
 
 
 pygame.init()
 WIDTH, HEIGHT = 960, 540
-KOEF = 1.3
-LOSESCREEN_WIDHT, LOSESCREEN_HEIGHT = 500, 300
+KOEF = 1.4
+LOSESCREEN_WIDHT, LOSESCREEN_HEIGHT = WIDTH / 2, HEIGHT / 2
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 
 player = None
+player_cur_score = 0
+with open('data\\player result\\info.txt') as file:
+    player_high_score = int(file.read())
+score_font = pygame.font.Font(None, 50)
+high_score_text = score_font.render(f'High: {player_high_score}', 1, "black")
+current_score_text = score_font.render(f'Score: {player_cur_score}', 1, "black")
+score_text = None
 level_x = None
 level_y = None
 is_alive = True
@@ -192,28 +205,36 @@ all_sprites = pygame.sprite.Group()
 TILE_WIDHT = TILE_HEIGHT = 50 #размер одной клетки
 
 tile_images = { #картинки спрайтов
-    'wall': pygame.transform.scale(load_image('box.png'), (TILE_WIDHT, TILE_HEIGHT)),
-    'tree': pygame.transform.scale(load_image('tree.png'), (TILE_WIDHT, TILE_HEIGHT)),
-    'land': pygame.transform.scale(load_image('land.png'), (TILE_WIDHT, TILE_HEIGHT))
+    'wall': pygame.transform.scale(load_image('pictures\\box.png'), (TILE_WIDHT, TILE_HEIGHT)),
+    'tree': pygame.transform.scale(load_image('pictures\\tree.png'), (TILE_WIDHT, TILE_HEIGHT)),
+    'land': pygame.transform.scale(load_image('pictures\\land.png'), (TILE_WIDHT, TILE_HEIGHT))
 }
 
 #картинки
-player_image = pygame.transform.scale(load_image('mar.png'), (TILE_WIDHT * 2, TILE_HEIGHT))
-ground_image = pygame.transform.scale(load_image('ground.png'), (WIDTH, TILE_HEIGHT * KOEF))
-background_image = pygame.transform.scale(load_image('background.png'), (WIDTH, HEIGHT))
-fon = pygame.transform.scale(load_image('fon.jpg'), (WIDTH, HEIGHT))
-retry_btn_image = pygame.transform.scale(load_image('retry.png'), (90, 90))
-quit_btn_image = pygame.transform.scale(load_image('quit.png'), (75, 75))
+player_image = pygame.transform.scale(load_image('pictures\\mar.png'), (TILE_WIDHT * 2, TILE_HEIGHT))
+ground_image = pygame.transform.scale(load_image('pictures\\ground.png'), (WIDTH, TILE_HEIGHT * KOEF))
+background_image = pygame.transform.scale(load_image('pictures\\background.png'), (WIDTH, HEIGHT))
+fon = pygame.transform.scale(load_image('pictures\\fon.jpg'), (WIDTH, HEIGHT))
+retry_btn_image = pygame.transform.scale(load_image('pictures\\retry.png'), (90, 90))
+quit_btn_image = pygame.transform.scale(load_image('pictures\\quit.png'), (75, 75))
 
 Start_screen()
-timer = pygame.USEREVENT + 1 #таймер
-pygame.time.set_timer(timer, 3)
+fly_timer = pygame.USEREVENT + 1  # таймер для полёта птицы
+score_timer = pygame.USEREVENT + 2  # таймер, по которому начисляется время
+pygame.time.set_timer(fly_timer, 3)
+pygame.time.set_timer(score_timer, 3000)
 T = 0
 pygame.key.set_repeat(10, 10)
 while True:
     for event in pygame.event.get():
-        if event.type == timer and player:
+        if event.type == fly_timer and player:
             player.rect = player.rect.move(1, 0)
+        if event.type == score_timer and player:
+            player_cur_score += 1
+            current_score_text = score_font.render(f'Score: {player_cur_score}', 1, "black")
+            if player_cur_score > player_high_score:
+                player_high_score += 1
+                high_score_text = score_font.render(f'High: {player_high_score}', 1, "black")
         if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
             terminate()
         if player and event.type == pygame.KEYDOWN and event.key == pygame.K_UP:
@@ -237,6 +258,11 @@ while True:
             btn.process()
     all_sprites.draw(screen)
     player_sprite.draw(screen)
+    if player:
+        screen.blit(high_score_text, (WIDTH - high_score_text.get_width() * 1.5, high_score_text.get_height()))
+        screen.blit(current_score_text, (WIDTH - high_score_text.get_width() * 1.5, high_score_text.get_height() * 2))
+    else:
+        screen.blit(high_score_text, (WIDTH - high_score_text.get_width() * 1.5, high_score_text.get_height()))
     pygame.display.flip()
     if not is_alive:
         Lose_screen(LOSESCREEN_WIDHT, LOSESCREEN_HEIGHT)

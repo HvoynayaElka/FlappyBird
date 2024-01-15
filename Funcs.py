@@ -18,7 +18,6 @@ def load_image(name, colorkey=None):
 
 
 def load_level(filename=None):
-    filename = 'map.txt'
     filename = "data/" + filename
     with open(filename, 'r') as mapFile:
         level_map = [line.strip() for line in mapFile]
