@@ -7,8 +7,6 @@ clock = pygame.time.Clock()
 pygame.init()
 screen = pygame.display.set_mode((1920, 1080))
 pygame.display.set_caption("Flappy bird")
-icon = pygame.image.load('images/bird/bird1.png')
-pygame.display.set_icon(icon)
 
 bg = pygame.image.load('images/bg.png')
 birds_fly = [pygame.image.load('images/bird/bird_2_1.png'), 
