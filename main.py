@@ -12,12 +12,15 @@ class Start_screen:
     def main_menu(self):
         screen.blit(fon, (0, 0))
         main_font = pygame.font.Font(None, 150)
-        string_rendered = main_font.render('Flappy bird', 1, "#dd9475")
+        string_rendered = main_font.render('Flappy bird', 1, "#d1e231")
         screen.blit(string_rendered, (WIDTH / 5, HEIGHT / 6))
         text = ['Играть', 'Выбрать уровень', 'Выйти']
-        Button(WIDTH / 20, HEIGHT * self.koef_coord, 300, 50, menu_buttons, text[0], start_game)
-        Button(WIDTH / 20, HEIGHT * self.koef_coord + self.delta_coord, 300, 50, menu_buttons, text[1], self.choose_level)
-        Button(WIDTH / 20, HEIGHT * self.koef_coord + self.delta_coord * 2, 300, 50, menu_buttons, text[2], terminate)
+        btn_width, btn_height = 250, 50
+        Button(WIDTH / 20, HEIGHT * self.koef_coord, btn_width, btn_height, menu_buttons, text[0], start_game)
+        Button(WIDTH / 20, HEIGHT * self.koef_coord + self.delta_coord, btn_width, btn_height, menu_buttons, text[1],
+               self.choose_level)
+        Button(WIDTH / 20, HEIGHT * self.koef_coord + self.delta_coord * 2, btn_width,
+               btn_height, menu_buttons, text[2], terminate)
 
     def choose_level(self):
         all_levels = levels_count()
@@ -42,17 +45,26 @@ class Lose_screen:
         self.main_font = pygame.font.Font(None, 75)
         self.string_rendered = self.main_font.render(self.text, 1, self.text_color)
         self.button_list = []
-        self.Retry_btn = Button((WIDTH - self.width) * 1.2, (HEIGHT - self.height) * 1.1, retry_btn_image.get_width(),
-                                retry_btn_image.get_height(), self.button_list,
-                                onclickFunction=self.restart_game, image=retry_btn_image)
+        self.Retry_btn = Button((WIDTH - self.width) * 1.2, (HEIGHT - self.height) * 1.1,
+                                retry_btn_image_normal.get_width(),
+                                retry_btn_image_normal.get_height(), self.button_list,
+                                onclickFunction=self.restart_game, image_normal=retry_btn_image_normal,
+                                image_hover=retry_btn_image_hover)
         self.Quit_btn = Button((WIDTH - self.width) * 0.6, (HEIGHT - self.height) * 1.1,
-                                quit_btn_image.get_width(), quit_btn_image.get_width(), self.button_list,
-                                onclickFunction=terminate, image=quit_btn_image)
+                               quit_btn_image_normal.get_width(), quit_btn_image_normal.get_width(), self.button_list,
+                               onclickFunction=self.go_to_menu, image_normal=quit_btn_image_normal,
+                               image_hover=quit_btn_image_hover)
         self.update()
 
     def restart_game(self):
-        global player, level_x, level_y, is_alive, is_win, player_speed_x, player_speed_y, obstacles_sprites,\
-            environment_sprites, player_sprite, ground_sprites, all_sprites, player_cur_score, current_score_text
+        self.destroy()
+        start_game(level_name)
+
+    def destroy(self):
+        global player, level_x, level_y, is_alive, is_win, player_speed_x,\
+            player_speed_y, obstacles_sprites, \
+            environment_sprites, player_sprite, ground_sprites,\
+            all_sprites, player_cur_score, current_score_text
         obstacles_sprites = pygame.sprite.Group()
         environment_sprites = pygame.sprite.Group()
         player_sprite = pygame.sprite.Group()
@@ -62,22 +74,27 @@ class Lose_screen:
         player_speed_y = 1
         player_speed_x = 1
         self.check = False
+        self.button_list.clear()
         player_cur_score = 0
         current_score_text = score_font.render(f'Score: {player_cur_score}', 1, "black")
-        start_game(level_name)
 
     def update(self):
+        self.Surf.blit(lose_screen_image, (0, 0))
         self.Surf.blit(self.string_rendered,
                        ((self.Surf.get_width() - self.string_rendered.get_width()) / 2,
                         (self.Surf.get_height() - self.string_rendered.get_height()) / 4))
         while self.check:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
+            for ev in pygame.event.get():
+                if ev.type == pygame.QUIT or (ev.type == pygame.KEYDOWN and ev.key == pygame.K_ESCAPE):
                     terminate()
             screen.blit(self.Surf, ((WIDTH - self.width) / 2, (HEIGHT - self.height) / 2))
-            for btn in self.button_list:
-                btn.process()
+            for button in self.button_list:
+                button.process()
             pygame.display.flip()
+
+    def go_to_menu(self):
+        self.destroy()
+        Start_screen()
 
 
 class Victory_screen(Lose_screen):
@@ -92,20 +109,26 @@ class Victory_screen(Lose_screen):
         self.main_font = pygame.font.Font(None, 75)
         self.string_rendered = self.main_font.render(self.text, 1, self.text_color)
         self.button_list = []
-        self.Retry_btn = Button((WIDTH - self.width) * 1.2, (HEIGHT - self.height) * 1.1, retry_btn_image.get_width(),
-                                retry_btn_image.get_height(), self.button_list,
-                                onclickFunction=self.restart_game, image=retry_btn_image)
+        self.Retry_btn = Button((WIDTH - self.width) * 1.2, (HEIGHT - self.height) * 1.1,
+                                retry_btn_image_normal.get_width(),
+                                retry_btn_image_normal.get_height(), self.button_list,
+                                onclickFunction=self.restart_game, image_normal=retry_btn_image_normal,
+                                image_hover=retry_btn_image_hover)
         self.Quit_btn = Button((WIDTH - self.width) * 0.6, (HEIGHT - self.height) * 1.1,
-                               quit_btn_image.get_width(), quit_btn_image.get_width(), self.button_list,
-                               onclickFunction=terminate, image=quit_btn_image)
-        self.next_btn = Button((WIDTH - self.width) * 0.9, (HEIGHT - self.height) * 1.1, next_btn_image.get_width(),
-                               next_btn_image.get_height(), self.button_list,
-                               onclickFunction=self.next_level, image=next_btn_image)
+                               quit_btn_image_normal.get_width(), quit_btn_image_normal.get_width(), self.button_list,
+                               onclickFunction=terminate, image_normal=quit_btn_image_normal,
+                               image_hover=quit_btn_image_hover)
+        self.next_btn = Button((WIDTH - self.width) * 0.9, (HEIGHT - self.height) * 1.1,
+                               next_btn_image_normal.get_width(),
+                               next_btn_image_normal.get_height(), self.button_list,
+                               onclickFunction=self.next_level, image_normal=next_btn_image_normal,
+                               image_hover=next_btn_image_hover)
         self.update()
 
     def next_level(self):
-        global player, level_x, level_y, is_alive, is_win, obstacles_sprites,\
-            environment_sprites, player_sprite, ground_sprites, all_sprites, player_cur_score, current_score_text
+        global player, level_x, level_y, is_alive, is_win, obstacles_sprites, \
+            environment_sprites, player_sprite, ground_sprites,\
+            all_sprites, player_cur_score, current_score_text
         obstacles_sprites = pygame.sprite.Group()
         environment_sprites = pygame.sprite.Group()
         player_sprite = pygame.sprite.Group()
@@ -179,22 +202,25 @@ class Ground(pygame.sprite.Sprite):
 
 
 class Button:
-    def __init__(self, x, y, width, height, btn_group, button_text='Button', onclickFunction=None, image=None):
+    def __init__(self, x, y, width, height, btn_group, button_text='Button',
+                 onclickFunction=None, image_normal=None,
+                 image_hover=None):
         self.x = x
         self.y = y
         self.width = width
         self.height = height
+        self.btn_group = btn_group
+        self.btn_image = None
         self.onclickFunction = onclickFunction
-        self.btn_image = image
         self.buttonRect = pygame.Rect(self.x, self.y, self.width, self.height)
-        if self.btn_image is None:
+        if image_normal is None:
             self.button_text = button_text
-            self.fillColors = {'normal': (20, 20, 20), 'hover': (255, 128, 128)}
+            self.fillColors = {'normal': (20, 20, 20), 'hover': '#ffff66'}
             self.main_font = pygame.font.Font(None, 50)
             self.display_text = self.main_font.render(button_text, True, (20, 20, 20))
         else:
-            self.btn_image = image
-        btn_group.append(self)
+            self.btn_image = {'normal': image_normal, 'hover': image_hover}
+        self.btn_group.append(self)
 
     def process(self):
         mouse_pos = pygame.mouse.get_pos()
@@ -207,13 +233,19 @@ class Button:
             if self in menu_buttons:
                 screen.blit(self.display_text, self.buttonRect)
         else:
-            if self.buttonRect.collidepoint(mouse_pos) and pygame.mouse.get_pressed()[0]:
-                self.onclickFunction()
-            screen.blit(self.btn_image, self.buttonRect)
+            self.image = self.btn_image['normal']
+            if self.buttonRect.collidepoint(mouse_pos):
+                self.image = self.btn_image['hover']
+                if pygame.mouse.get_pressed()[0]:
+                    self.onclickFunction()
+            if self in self.btn_group:
+                screen.blit(self.image, self.buttonRect)
 
 
 def start_game(filename=None):
-    global player, level_x, level_y, score_text, is_endless_level, level_name
+    global player,\
+        level_x, level_y, score_text, \
+        is_endless_level, level_name
     menu_buttons.clear()
     bg_sound.play()
     if not filename:
@@ -233,8 +265,10 @@ def start_game(filename=None):
         Ground(1, upper=True)
 
 
-def generate_level(level): # генерация уровня из файла
-    new_player, x, y = None, None, None
+def generate_level(level):  # генерация уровня из файла
+    new_player = None
+    x = None
+    y = None
     for y in range(len(level)):
         for x in range(len(level[y])):
             if level[y][x] == '#':
@@ -259,14 +293,16 @@ def terminate():
 
 
 pygame.init()
-#различные константы
-WIDTH, HEIGHT = 960, 540
+# различные константы
+WIDTH = 960
+HEIGHT = 540
 KOEF = 1.4
 player_speed_y = 1
 vy = 2
 delta_vy = 5
 player_speed_x = 1
-LOSESCREEN_WIDHT, LOSESCREEN_HEIGHT = WIDTH / 2, HEIGHT / 2
+LOSESCREEN_WIDHT = HEIGHT / 2
+LOSESCREEN_HEIGHT = WIDTH / 2
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 
 player = None
@@ -282,7 +318,7 @@ level_x = None
 level_y = None
 is_alive = True  # меняется при столкновении
 is_win = False  # меняется, когда доходим до финиша
-is_endless_level = True  #если True, то уровень подобен кольцу, финиша нет.
+is_endless_level = True  # если True, то уровень подобен кольцу, финиша нет.
 camera = Camera()
 
 menu_buttons = []
@@ -291,48 +327,51 @@ environment_sprites = pygame.sprite.Group()
 player_sprite = pygame.sprite.Group()
 ground_sprites = pygame.sprite.Group()
 all_sprites = pygame.sprite.Group()
-finish_sprite = None # Спрайт финиша (нет в бесконченом уровне)
+finish_sprite = None  # Спрайт финиша (нет в бесконченом уровне)
 
-
-TILE_WIDHT = TILE_HEIGHT = 50 #размер одной клетки
+TILE_WIDHT = TILE_HEIGHT = 50  # размер одной клетки
 BIRD_WIDTH, BIRD_HEIGHT = 40, 40
 
-tile_images = { #картинки спрайтов
+tile_images = {  # картинки спрайтов
     'wall': pygame.transform.scale(load_image('pictures\\box.png'), (TILE_WIDHT, TILE_HEIGHT)),
     'tree': pygame.transform.scale(load_image('pictures\\tree.png'), (TILE_WIDHT, TILE_HEIGHT)),
     'land': pygame.transform.scale(load_image('pictures\\land.png'), (TILE_WIDHT, TILE_HEIGHT)),
     'finish': load_image('pictures\\finish.png')
 }
 
-#картинки
-player_images = [pygame.transform.scale(load_image('images/bird/bird_2_1.png', -1), (BIRD_WIDTH, BIRD_HEIGHT)),
-             pygame.transform.scale(load_image('images/bird/bird_2_2.png', -1), (BIRD_WIDTH, BIRD_HEIGHT)),
-             pygame.transform.scale(load_image('images/bird/bird_2_3.png', -1), (BIRD_WIDTH, BIRD_HEIGHT)),
-             pygame.transform.scale(load_image('images/bird/bird_2_4.png', -1), (BIRD_WIDTH, BIRD_HEIGHT)),
-             pygame.transform.scale(load_image('images/bird/bird_2_5.png', -1), (BIRD_WIDTH, BIRD_HEIGHT)),
-             pygame.transform.scale(load_image('images/bird/bird_2_6.png', -1), (BIRD_WIDTH, BIRD_HEIGHT)),
-             pygame.transform.scale(load_image('images/bird/bird_2_7.png', -1), (BIRD_WIDTH, BIRD_HEIGHT)),
-             pygame.transform.scale(load_image('images/bird/bird_2_8.png', -1), (BIRD_WIDTH, BIRD_HEIGHT)),
-             pygame.transform.scale(load_image('images/bird/bird_2_9.png', -1), (BIRD_WIDTH, BIRD_HEIGHT)),
-             pygame.transform.scale(load_image('images/bird/bird_2_10.png', -1), (BIRD_WIDTH, BIRD_HEIGHT)),
-             pygame.transform.scale(load_image('images/bird/bird_2_11.png', -1), (BIRD_WIDTH, BIRD_HEIGHT)),
-             pygame.transform.scale(load_image('images/bird/bird_2_12.png', -1), (BIRD_WIDTH, BIRD_HEIGHT)),
-             pygame.transform.scale(load_image('images/bird/bird_2_13.png', -1), (BIRD_WIDTH, BIRD_HEIGHT)),
-             pygame.transform.scale(load_image('images/bird/bird_2_14.png', -1), (BIRD_WIDTH, BIRD_HEIGHT))]
+# картинки
+player_images = [pygame.transform.scale(load_image('pictures/bird/bird_2_1.png', -1), (BIRD_WIDTH, BIRD_HEIGHT)),
+                 pygame.transform.scale(load_image('pictures/bird/bird_2_2.png', -1), (BIRD_WIDTH, BIRD_HEIGHT)),
+                 pygame.transform.scale(load_image('pictures/bird/bird_2_3.png', -1), (BIRD_WIDTH, BIRD_HEIGHT)),
+                 pygame.transform.scale(load_image('pictures/bird/bird_2_4.png', -1), (BIRD_WIDTH, BIRD_HEIGHT)),
+                 pygame.transform.scale(load_image('pictures/bird/bird_2_5.png', -1), (BIRD_WIDTH, BIRD_HEIGHT)),
+                 pygame.transform.scale(load_image('pictures/bird/bird_2_6.png', -1), (BIRD_WIDTH, BIRD_HEIGHT)),
+                 pygame.transform.scale(load_image('pictures/bird/bird_2_7.png', -1), (BIRD_WIDTH, BIRD_HEIGHT)),
+                 pygame.transform.scale(load_image('pictures/bird/bird_2_8.png', -1), (BIRD_WIDTH, BIRD_HEIGHT)),
+                 pygame.transform.scale(load_image('pictures/bird/bird_2_9.png', -1), (BIRD_WIDTH, BIRD_HEIGHT)),
+                 pygame.transform.scale(load_image('pictures/bird/bird_2_10.png', -1), (BIRD_WIDTH, BIRD_HEIGHT)),
+                 pygame.transform.scale(load_image('pictures/bird/bird_2_11.png', -1), (BIRD_WIDTH, BIRD_HEIGHT)),
+                 pygame.transform.scale(load_image('pictures/bird/bird_2_12.png', -1), (BIRD_WIDTH, BIRD_HEIGHT)),
+                 pygame.transform.scale(load_image('pictures/bird/bird_2_13.png', -1), (BIRD_WIDTH, BIRD_HEIGHT)),
+                 pygame.transform.scale(load_image('pictures/bird/bird_2_14.png', -1), (BIRD_WIDTH, BIRD_HEIGHT))]
 ground_image = pygame.transform.scale(load_image('pictures\\ground.png'), (WIDTH, TILE_HEIGHT * KOEF))
 background_image = pygame.transform.scale(load_image('pictures\\background.png'), (WIDTH, HEIGHT))
-fon = pygame.transform.scale(load_image('pictures\\fon.jpg'), (WIDTH, HEIGHT))
-retry_btn_image = pygame.transform.scale(load_image('pictures\\retry.png'), (90, 90))
-quit_btn_image = pygame.transform.scale(load_image('pictures\\quit.png'), (75, 75))
-next_btn_image = pygame.transform.scale(load_image('pictures\\next.png'), (75, 75))
+fon = pygame.transform.scale(load_image('pictures\\fon.png'), (WIDTH, HEIGHT))
+retry_btn_image_normal = pygame.transform.scale(load_image('pictures\\retry_normal.png'), (90, 90))
+retry_btn_image_hover = pygame.transform.scale(load_image('pictures\\retry_hover.png'), (90, 90))
+quit_btn_image_normal = pygame.transform.scale(load_image('pictures\\quit_normal.png'), (90, 90))
+quit_btn_image_hover = pygame.transform.scale(load_image('pictures\\quit_hover.png'), (90, 90))
+next_btn_image_normal = pygame.transform.scale(load_image('pictures\\next_normal.png'), (90, 90))
+next_btn_image_hover = pygame.transform.scale(load_image('pictures\\next_hover.png'), (90, 90))
+lose_screen_image = pygame.transform.scale(load_image('pictures\\bg.jpg'), (LOSESCREEN_WIDHT, LOSESCREEN_HEIGHT))
 
 Start_screen()
-clock_vy = pygame.time.Clock()  #сила тяжести, действующая на птицу
-bird_animation_timer = pygame.USEREVENT + 3  #таймер для анимации птицы
-score_timer = pygame.USEREVENT + 2  #таймер, по которому начисляются очки
+clock_vy = pygame.time.Clock()  # сила тяжести, действующая на птицу
+bird_animation_timer = pygame.USEREVENT + 3  # таймер для анимации птицы
+score_timer = pygame.USEREVENT + 2  # таймер, по которому начисляются очки
 pygame.time.set_timer(score_timer, 4000)
 pygame.time.set_timer(bird_animation_timer, 100)
-T = 0  #T - период движения заднего фона
+T = 0  # T - период движения заднего фона
 bg_sound = pygame.mixer.Sound('data\\sounds\\les.mp3')
 bg_sound.set_volume(0.2)
 while True:
@@ -364,7 +403,8 @@ while True:
         for sprite in all_sprites:
             if finish_sprite and pygame.sprite.collide_mask(player, finish_sprite):
                 is_win = True
-            elif pygame.sprite.collide_mask(player, sprite) and (sprite in obstacles_sprites or sprite in ground_sprites):
+            elif pygame.sprite.collide_mask(player, sprite) and (
+                    sprite in obstacles_sprites or sprite in ground_sprites):
                 is_alive = False
             camera.apply(sprite)
     else:
@@ -372,14 +412,17 @@ while True:
             btn.process()
     all_sprites.draw(screen)
     player_sprite.draw(screen)
-    if player: # заполняется после спрайтов для того, чтобы быть поверх всего остального
-        screen.blit(high_score_text, (WIDTH - high_score_text.get_width() * 1.5, high_score_text.get_height())) #коэффициенты подобраны без различных зависимостей
-        screen.blit(current_score_text, (WIDTH - high_score_text.get_width() * 1.5, high_score_text.get_height() * 2)) #коэффициенты подобраны без различных зависимостей
+    if player:  # заполняется после спрайтов для того, чтобы быть поверх всего остального
+        screen.blit(high_score_text, (WIDTH - high_score_text.get_width() * 1.5,
+                                      high_score_text.get_height()))  # коэффициенты подобраны без различных зависимостей
+        screen.blit(current_score_text, (WIDTH - high_score_text.get_width() * 1.5,
+                                         high_score_text.get_height() * 2))  # коэффициенты подобраны без различных зависимостей
     else:
-        screen.blit(high_score_text, (WIDTH - high_score_text.get_width() * 1.5, high_score_text.get_height())) #коэффициенты подобраны без различных зависимостей
+        screen.blit(high_score_text, (WIDTH - high_score_text.get_width() * 1.5,
+                                      high_score_text.get_height()))  # коэффициенты подобраны без различных зависимостей
     pygame.display.flip()
     if is_win:
-        Victory_screen(LOSESCREEN_WIDHT, LOSESCREEN_HEIGHT, 'you win!', 'green')
+        Victory_screen(LOSESCREEN_WIDHT, LOSESCREEN_HEIGHT, 'you win!', '#ffff66')
     elif not is_alive:
         bg_sound.stop()
-        Lose_screen(LOSESCREEN_WIDHT, LOSESCREEN_HEIGHT, 'you lose', 'red')
+        Lose_screen(LOSESCREEN_WIDHT, LOSESCREEN_HEIGHT, 'you lose', '#ff4d00')
