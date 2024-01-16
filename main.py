@@ -301,8 +301,8 @@ player_speed_y = 1
 vy = 2
 delta_vy = 5
 player_speed_x = 1
-LOSESCREEN_WIDHT = HEIGHT / 2
-LOSESCREEN_HEIGHT = WIDTH / 2
+LOSESCREEN_WIDHT = WIDTH / 2
+LOSESCREEN_HEIGHT = HEIGHT / 2
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 
 player = None
