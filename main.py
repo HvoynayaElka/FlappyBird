@@ -51,7 +51,7 @@ class Lose_screen:
         self.update()
 
     def restart_game(self):
-        global player, level_x, level_y, is_alive, is_win, obstacles_sprites,\
+        global player, level_x, level_y, is_alive, is_win, player_speed_x, player_speed_y, obstacles_sprites,\
             environment_sprites, player_sprite, ground_sprites, all_sprites, player_cur_score, current_score_text
         obstacles_sprites = pygame.sprite.Group()
         environment_sprites = pygame.sprite.Group()
@@ -59,6 +59,8 @@ class Lose_screen:
         ground_sprites = pygame.sprite.Group()
         all_sprites = pygame.sprite.Group()
         player, level_x, level_y, is_alive, is_win = None, None, None, True, False
+        player_speed_y = 1
+        player_speed_x = 1
         self.check = False
         player_cur_score = 0
         current_score_text = score_font.render(f'Score: {player_cur_score}', 1, "black")
@@ -139,9 +141,15 @@ class Tile(pygame.sprite.Sprite):
 class Player(pygame.sprite.Sprite): #создаёт спрайт игрока
     def __init__(self, pos_x, pos_y):
         super().__init__(player_sprite, all_sprites)
-        self.image = player_image
-        self.rect = self.image.get_rect().move(TILE_WIDHT * pos_x + 15, TILE_HEIGHT * pos_y + 5)
+        self.frames = player_images
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
+        self.rect = self.image.get_rect().move(TILE_WIDHT * pos_x, TILE_HEIGHT * pos_y)
         self.mask = pygame.mask.from_surface(self.image)
+
+    def update(self):
+        self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+        self.image = self.frames[self.cur_frame]
 
 
 class Camera:
@@ -207,6 +215,7 @@ class Button:
 def start_game(filename=None):
     global player, level_x, level_y, score_text, is_endless_level, level_name
     menu_buttons.clear()
+    bg_sound.play()
     if not filename:
         player, level_x, level_y = generate_level(load_level('levels\\main_map.txt'))
     else:
@@ -252,6 +261,9 @@ def terminate():
 pygame.init()
 WIDTH, HEIGHT = 960, 540
 KOEF = 1.4
+player_speed_y = 0.5
+player_speed_x = 1
+delta_vy = 0.1
 LOSESCREEN_WIDHT, LOSESCREEN_HEIGHT = WIDTH / 2, HEIGHT / 2
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 
@@ -281,6 +293,7 @@ finish_sprite = None
 
 
 TILE_WIDHT = TILE_HEIGHT = 50 #размер одной клетки
+BIRD_WIDTH, BIRD_HEIGHT = 45, 45
 
 tile_images = { #картинки спрайтов
     'wall': pygame.transform.scale(load_image('pictures\\box.png'), (TILE_WIDHT, TILE_HEIGHT)),
@@ -290,7 +303,20 @@ tile_images = { #картинки спрайтов
 }
 
 #картинки
-player_image = pygame.transform.scale(load_image('pictures\\mar.png'), (TILE_WIDHT * 2, TILE_HEIGHT))
+player_images = [pygame.transform.scale(load_image('images/bird/bird_2_1.png', -1), (BIRD_WIDTH, BIRD_HEIGHT)),
+             pygame.transform.scale(load_image('images/bird/bird_2_2.png', -1), (BIRD_WIDTH, BIRD_HEIGHT)),
+             pygame.transform.scale(load_image('images/bird/bird_2_3.png', -1), (BIRD_WIDTH, BIRD_HEIGHT)),
+             pygame.transform.scale(load_image('images/bird/bird_2_4.png', -1), (BIRD_WIDTH, BIRD_HEIGHT)),
+             pygame.transform.scale(load_image('images/bird/bird_2_5.png', -1), (BIRD_WIDTH, BIRD_HEIGHT)),
+             pygame.transform.scale(load_image('images/bird/bird_2_6.png', -1), (BIRD_WIDTH, BIRD_HEIGHT)),
+             pygame.transform.scale(load_image('images/bird/bird_2_7.png', -1), (BIRD_WIDTH, BIRD_HEIGHT)),
+             pygame.transform.scale(load_image('images/bird/bird_2_8.png', -1), (BIRD_WIDTH, BIRD_HEIGHT)),
+             pygame.transform.scale(load_image('images/bird/bird_2_9.png', -1), (BIRD_WIDTH, BIRD_HEIGHT)),
+             pygame.transform.scale(load_image('images/bird/bird_2_10.png', -1), (BIRD_WIDTH, BIRD_HEIGHT)),
+             pygame.transform.scale(load_image('images/bird/bird_2_11.png', -1), (BIRD_WIDTH, BIRD_HEIGHT)),
+             pygame.transform.scale(load_image('images/bird/bird_2_12.png', -1), (BIRD_WIDTH, BIRD_HEIGHT)),
+             pygame.transform.scale(load_image('images/bird/bird_2_13.png', -1), (BIRD_WIDTH, BIRD_HEIGHT)),
+             pygame.transform.scale(load_image('images/bird/bird_2_14.png', -1), (BIRD_WIDTH, BIRD_HEIGHT))]
 ground_image = pygame.transform.scale(load_image('pictures\\ground.png'), (WIDTH, TILE_HEIGHT * KOEF))
 background_image = pygame.transform.scale(load_image('pictures\\background.png'), (WIDTH, HEIGHT))
 fon = pygame.transform.scale(load_image('pictures\\fon.jpg'), (WIDTH, HEIGHT))
@@ -299,16 +325,23 @@ quit_btn_image = pygame.transform.scale(load_image('pictures\\quit.png'), (75, 7
 next_btn_image = pygame.transform.scale(load_image('pictures\\next.png'), (75, 75))
 
 Start_screen()
-fly_timer = pygame.USEREVENT + 1  # таймер для полёта птицы
+bird_animation_timer = pygame.USEREVENT + 3  # таймер для полёта птицы
+fly_timer = pygame.USEREVENT + 1  # таймер движения птицы
 score_timer = pygame.USEREVENT + 2  # таймер, по которому начисляется время
-pygame.time.set_timer(fly_timer, 3)
+pygame.time.set_timer(fly_timer, 10)
 pygame.time.set_timer(score_timer, 3000)
+pygame.time.set_timer(bird_animation_timer, 100)
 T = 0
-pygame.key.set_repeat(10, 10)
+bg_sound = pygame.mixer.Sound('data\\sounds\\les.mp3')
+bg_sound.set_volume(0.2)
 while True:
     for event in pygame.event.get():
+        if event.type == bird_animation_timer and player:
+            player.update()
         if event.type == fly_timer and player:
-            player.rect = player.rect.move(1, 0)
+            player.rect = player.rect.move(player_speed_x, 0)
+            player.rect = player.rect.move(0, player_speed_y)
+            player_speed_y += delta_vy
         if event.type == score_timer and player:
             player_cur_score += 1
             current_score_text = score_font.render(f'Score: {player_cur_score}', 1, "black")
@@ -317,10 +350,8 @@ while True:
                 high_score_text = score_font.render(f'High: {player_high_score}', 1, "black")
         if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
             terminate()
-        if player and event.type == pygame.KEYDOWN and event.key == pygame.K_UP:
-           player.rect = player.rect.move(0, -10)
-        if player and event.type == pygame.KEYDOWN and event.key == pygame.K_DOWN:
-           player.rect = player.rect.move(0, 10)
+        if player and event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE and player.rect.y > 50:
+            player_speed_y = -5
     if player:
         screen.fill((0, 0, 0))
         screen.blit(background_image, (T, 0))
@@ -349,4 +380,5 @@ while True:
     if is_win:
         Victory_screen(LOSESCREEN_WIDHT, LOSESCREEN_HEIGHT, 'you win!', 'green')
     elif not is_alive:
+        bg_sound.stop()
         Lose_screen(LOSESCREEN_WIDHT, LOSESCREEN_HEIGHT, 'you lose', 'red')
