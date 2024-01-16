@@ -138,7 +138,7 @@ class Tile(pygame.sprite.Sprite):
             self.rect = self.image.get_rect().move(TILE_WIDHT * pos_x, TILE_HEIGHT * pos_y)
 
 
-class Player(pygame.sprite.Sprite): #создаёт спрайт игрока
+class Player(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
         super().__init__(player_sprite, all_sprites)
         self.frames = player_images
@@ -175,7 +175,7 @@ class Ground(pygame.sprite.Sprite):
         if not upper:
             self.rect = self.image.get_rect().move(WIDTH * k, HEIGHT - TILE_HEIGHT * KOEF)
         else:
-            self.rect = self.image.get_rect().move(WIDTH * k, -TILE_HEIGHT * KOEF)
+            self.rect = self.image.get_rect().move(WIDTH * k, -TILE_HEIGHT * 2 * KOEF)
 
 
 class Button:
@@ -259,17 +259,19 @@ def terminate():
 
 
 pygame.init()
+#различные константы
 WIDTH, HEIGHT = 960, 540
 KOEF = 1.4
-player_speed_y = 0.5
+player_speed_y = 1
+vy = 2
+delta_vy = 5
 player_speed_x = 1
-delta_vy = 0.1
 LOSESCREEN_WIDHT, LOSESCREEN_HEIGHT = WIDTH / 2, HEIGHT / 2
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 
 player = None
 player_cur_score = 0
-with open('data\\player result\\info.txt') as file:
+with open('data\\player result\\info.txt') as file:  # чтение рекорда очков из файла
     player_high_score = int(file.read())
 score_font = pygame.font.Font(None, 50)
 high_score_text = score_font.render(f'High: {player_high_score}', 1, "black")
@@ -278,9 +280,9 @@ score_text = None
 level_name = None
 level_x = None
 level_y = None
-is_alive = True
-is_win = False
-is_endless_level = True
+is_alive = True  # меняется при столкновении
+is_win = False  # меняется, когда доходим до финиша
+is_endless_level = True  #если True, то уровень подобен кольцу, финиша нет.
 camera = Camera()
 
 menu_buttons = []
@@ -289,11 +291,11 @@ environment_sprites = pygame.sprite.Group()
 player_sprite = pygame.sprite.Group()
 ground_sprites = pygame.sprite.Group()
 all_sprites = pygame.sprite.Group()
-finish_sprite = None
+finish_sprite = None # Спрайт финиша (нет в бесконченом уровне)
 
 
 TILE_WIDHT = TILE_HEIGHT = 50 #размер одной клетки
-BIRD_WIDTH, BIRD_HEIGHT = 45, 45
+BIRD_WIDTH, BIRD_HEIGHT = 40, 40
 
 tile_images = { #картинки спрайтов
     'wall': pygame.transform.scale(load_image('pictures\\box.png'), (TILE_WIDHT, TILE_HEIGHT)),
@@ -325,23 +327,18 @@ quit_btn_image = pygame.transform.scale(load_image('pictures\\quit.png'), (75, 7
 next_btn_image = pygame.transform.scale(load_image('pictures\\next.png'), (75, 75))
 
 Start_screen()
-bird_animation_timer = pygame.USEREVENT + 3  # таймер для полёта птицы
-fly_timer = pygame.USEREVENT + 1  # таймер движения птицы
-score_timer = pygame.USEREVENT + 2  # таймер, по которому начисляется время
-pygame.time.set_timer(fly_timer, 10)
-pygame.time.set_timer(score_timer, 3000)
+clock_vy = pygame.time.Clock()  #сила тяжести, действующая на птицу
+bird_animation_timer = pygame.USEREVENT + 3  #таймер для анимации птицы
+score_timer = pygame.USEREVENT + 2  #таймер, по которому начисляются очки
+pygame.time.set_timer(score_timer, 4000)
 pygame.time.set_timer(bird_animation_timer, 100)
-T = 0
+T = 0  #T - период движения заднего фона
 bg_sound = pygame.mixer.Sound('data\\sounds\\les.mp3')
 bg_sound.set_volume(0.2)
 while True:
     for event in pygame.event.get():
         if event.type == bird_animation_timer and player:
             player.update()
-        if event.type == fly_timer and player:
-            player.rect = player.rect.move(player_speed_x, 0)
-            player.rect = player.rect.move(0, player_speed_y)
-            player_speed_y += delta_vy
         if event.type == score_timer and player:
             player_cur_score += 1
             current_score_text = score_font.render(f'Score: {player_cur_score}', 1, "black")
@@ -350,9 +347,13 @@ while True:
                 high_score_text = score_font.render(f'High: {player_high_score}', 1, "black")
         if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
             terminate()
-        if player and event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE and player.rect.y > 50:
-            player_speed_y = -5
+        if player and event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE and player.rect.y > TILE_WIDHT:
+            player_speed_y = -delta_vy
     if player:
+        player.rect = player.rect.move(player_speed_x, 0)
+        player.rect = player.rect.move(0, player_speed_y)
+        if player_speed_y < vy:
+            player_speed_y += vy / clock_vy.tick(120)
         screen.fill((0, 0, 0))
         screen.blit(background_image, (T, 0))
         screen.blit(background_image, (T + WIDTH, 0))
@@ -371,11 +372,11 @@ while True:
             btn.process()
     all_sprites.draw(screen)
     player_sprite.draw(screen)
-    if player:
-        screen.blit(high_score_text, (WIDTH - high_score_text.get_width() * 1.5, high_score_text.get_height()))
-        screen.blit(current_score_text, (WIDTH - high_score_text.get_width() * 1.5, high_score_text.get_height() * 2))
+    if player: # заполняется после спрайтов для того, чтобы быть поверх всего остального
+        screen.blit(high_score_text, (WIDTH - high_score_text.get_width() * 1.5, high_score_text.get_height())) #коэффициенты подобраны без различных зависимостей
+        screen.blit(current_score_text, (WIDTH - high_score_text.get_width() * 1.5, high_score_text.get_height() * 2)) #коэффициенты подобраны без различных зависимостей
     else:
-        screen.blit(high_score_text, (WIDTH - high_score_text.get_width() * 1.5, high_score_text.get_height()))
+        screen.blit(high_score_text, (WIDTH - high_score_text.get_width() * 1.5, high_score_text.get_height())) #коэффициенты подобраны без различных зависимостей
     pygame.display.flip()
     if is_win:
         Victory_screen(LOSESCREEN_WIDHT, LOSESCREEN_HEIGHT, 'you win!', 'green')
