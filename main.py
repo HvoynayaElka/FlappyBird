@@ -156,6 +156,9 @@ class Tile(pygame.sprite.Sprite):
         elif tile_type == 'finish':
             finish_sprite = self
             self.rect = self.image.get_rect().move(TILE_WIDHT * pos_x, TILE_HEIGHT * pos_y)
+        elif tile_type == 'obs_end':
+            obstacles_sprites.add(self)
+            self.rect = self.image.get_rect().move(TILE_WIDHT * pos_x - 5, TILE_HEIGHT * pos_y) # вычитается 5 пикселей, для того, чтобы верхушка трубы примерно ровно встала, трудно просчитать, какой должен быть коэфф.
         else:
             obstacles_sprites.add(self)
             self.rect = self.image.get_rect().move(TILE_WIDHT * pos_x, TILE_HEIGHT * pos_y)
@@ -184,7 +187,7 @@ class Camera:
         if is_endless_level:
             if obj in ground_sprites and obj.rect.x <= -WIDTH:
                 obj.rect.x += WIDTH * 2
-            elif obj in obstacles_sprites and obj.rect.x <= -TILE_WIDHT:
+            elif obj in obstacles_sprites and obj.rect.x <= -TILE_WIDHT * 2:
                 obj.rect.x += level_x * TILE_WIDHT
 
     def update(self, target):
@@ -249,6 +252,7 @@ def start_game(filename=None):
     menu_buttons.clear()
     bg_sound.play()
     if not filename:
+        is_endless_level = True
         player, level_x, level_y = generate_level(load_level('levels\\main_map.txt'))
     else:
         is_endless_level = False
@@ -272,7 +276,11 @@ def generate_level(level):  # генерация уровня из файла
     for y in range(len(level)):
         for x in range(len(level[y])):
             if level[y][x] == '#':
-                Tile('wall', x, y)
+                Tile('vert_wall', x, y)
+            elif level[y][x] == '_':
+                Tile('gor_wall', x, y)
+            elif level[y][x] == '&':
+                Tile('obs_end', x, y)
             elif level[y][x] == '@':
                 new_player = Player(x, y)
             elif level[y][x] == '!':
@@ -333,10 +341,12 @@ TILE_WIDHT = TILE_HEIGHT = 50  # размер одной клетки
 BIRD_WIDTH, BIRD_HEIGHT = 40, 40
 
 tile_images = {  # картинки спрайтов
-    'wall': pygame.transform.scale(load_image('pictures\\box.png'), (TILE_WIDHT, TILE_HEIGHT)),
+    'vert_wall': pygame.transform.scale(load_image('pictures\\vert_box.png'), (TILE_WIDHT, TILE_HEIGHT)),
     'tree': pygame.transform.scale(load_image('pictures\\tree.png'), (TILE_WIDHT, TILE_HEIGHT)),
     'land': pygame.transform.scale(load_image('pictures\\land.png'), (TILE_WIDHT, TILE_HEIGHT)),
-    'finish': load_image('pictures\\finish.png')
+    'finish': load_image('pictures\\finish.png'),
+    'obs_end': pygame.transform.scale(load_image('pictures\\box_end.png'), (TILE_WIDHT * 1.2, TILE_HEIGHT)),
+    'gor_wall': pygame.transform.scale(load_image('pictures\\gor_box.png'), (TILE_WIDHT, TILE_HEIGHT)),
 }
 
 # картинки
@@ -412,7 +422,7 @@ while True:
             btn.process()
     all_sprites.draw(screen)
     player_sprite.draw(screen)
-    if player:  # заполняется после спрайтов для того, чтобы быть поверх всего остального
+    if player and is_endless_level:  # заполняется после спрайтов для того, чтобы быть поверх всего остального
         screen.blit(high_score_text, (WIDTH - high_score_text.get_width() * 1.5,
                                       high_score_text.get_height()))  # коэффициенты подобраны без различных зависимостей
         screen.blit(current_score_text, (WIDTH - high_score_text.get_width() * 1.5,
